@@ -1,0 +1,250 @@
+.session-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.session-modal-content {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.3s ease-out;
+}
+
+.session-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.session-modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.btn-close-modal:hover {
+  color: #0f172a;
+}
+
+.session-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.color-selection {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.color-option {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+
+.color-option.selected {
+  border-color: #0f172a;
+}
+
+/* Custom Time Picker */
+.time-picker-popup {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  background-color: #27272a; /* dark gray */
+  border-radius: 0.75rem;
+  padding: 1rem;
+  z-index: 10;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.time-picker-popup::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 12px;
+  height: 12px;
+  background-color: #27272a;
+  transform: rotate(45deg);
+}
+
+.time-wheels {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  height: 150px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.time-wheel-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  padding: 60px 0; /* padding to center items */
+  width: 40px;
+}
+
+/* hide scrollbar */
+.time-wheel-col::-webkit-scrollbar {
+  display: none;
+}
+.time-wheel-col {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.time-wheel-item {
+  height: 30px;
+  line-height: 30px;
+  font-size: 1rem;
+  color: #71717a;
+  scroll-snap-align: center;
+  cursor: pointer;
+  transition: color 0.2s, font-size 0.2s;
+}
+
+.time-wheel-item.active {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Faded overlays for the wheel */
+.time-wheels::before,
+.time-wheels::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.time-wheels::before {
+  top: 0;
+  background: linear-gradient(to bottom, #27272a 10%, transparent);
+}
+
+.time-wheels::after {
+  bottom: 0;
+  background: linear-gradient(to top, #27272a 10%, transparent);
+}
+
+.time-picker-actions {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid #3f3f46;
+}
+
+.time-btn-reset {
+  color: #60a5fa; /* light blue */
+  background: none;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.time-btn-done {
+  color: #60a5fa;
+  background: none;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.session-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-session-cancel {
+  flex: 1;
+  padding: 0.75rem;
+  background-color: white;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-session-cancel:hover {
+  background-color: #f8fafc;
+}
+
+.btn-session-add {
+  flex: 1;
+  padding: 0.75rem;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-session-add:hover {
+  background-color: #4f46e5;
+}

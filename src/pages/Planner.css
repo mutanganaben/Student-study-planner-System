@@ -1,0 +1,361 @@
+.planner-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Header Section */
+.planner-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.planner-title-group h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 0.25rem;
+}
+
+.planner-title-group p {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+
+.planner-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Toggle Group (Week / Month) */
+.view-toggle-group {
+  display: flex;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.view-btn {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn.active {
+  background-color: var(--color-primary); /* #4f46e5 usually */
+  color: white;
+}
+
+.btn-add-session {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-add-session:hover {
+  background-color: #4338ca;
+}
+
+/* Date Navigator */
+.date-navigator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.date-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.5rem;
+}
+
+.date-nav-btn:hover {
+  background-color: #f1f5f9;
+}
+
+.date-range {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--color-text-main);
+}
+
+/* Timetable Container */
+.timetable-wrapper {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* CSS Grid for Timetable */
+.timetable-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7, 1fr);
+  position: relative;
+}
+
+/* Headers */
+.timetable-header-cell {
+  padding: 1rem 0;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.timetable-header-cell:last-child {
+  border-right: none;
+}
+
+.time-axis-header {
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background-color: #f8fafc;
+}
+
+.day-name {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.day-number {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.timetable-header-cell.active {
+  background-color: var(--color-primary);
+}
+
+.timetable-header-cell.active .day-name,
+.timetable-header-cell.active .day-number {
+  color: #ffffff;
+}
+
+/* Body / Time Columns */
+.time-label-column {
+  border-right: 1px solid var(--color-border);
+  background-color: #fefefe; /* Match image slightly */
+}
+
+.time-label {
+  height: 60px; /* 1 hour = 60px */
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  box-sizing: border-box;
+}
+
+.day-column {
+  position: relative; /* For absolute pos events */
+  border-right: 1px solid var(--color-border);
+  height: calc(14 * 60px); /* 14 slots, 7:00 to 20:00 (14 hours) */
+}
+
+.day-column:last-child {
+  border-right: none;
+}
+
+.grid-cell {
+  height: 60px;
+  border-bottom: 1px solid var(--color-border);
+  box-sizing: border-box;
+}
+
+/* Time Slot Block highlight (like the blue block in Image 1 under Tue) */
+.time-slot-highlight {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background-color: #eef2ff;
+  border-left: 2px solid #818cf8;
+}
+
+/* Event Cards */
+.event-card {
+  position: absolute;
+  left: 4px;
+  right: 4px; /* Tiny gap on edges */
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.1s;
+}
+
+.event-card:hover {
+  transform: scale(1.02);
+  z-index: 20;
+}
+
+.event-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.1rem;
+}
+
+.event-subtitle {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.2rem;
+}
+
+.event-time {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+/* Colors based on image */
+.bg-pink { background-color: #ec4899; } /* Pink */
+.bg-blue { background-color: #4f46e5; } /* Dark Blue/Indigo */
+.bg-purple { background-color: #8b5cf6; } /* Violet */
+.bg-green { background-color: #10b981; } /* Emerald */
+
+/* Month View / All Sessions List */
+.sessions-list-wrapper {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.sessions-list-wrapper h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 1.25rem;
+}
+
+.sessions-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.session-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+}
+
+.session-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.session-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.session-info h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.session-info p {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.session-right {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.session-datetime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.session-datetime .date {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.session-datetime .time {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.btn-remove-session {
+  background: none;
+  border: none;
+  color: #ef4444; /* red-500 */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  transition: opacity 0.2s;
+}
+
+.btn-remove-session:hover {
+  opacity: 0.7;
+}
