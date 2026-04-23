@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Bell, Palette, Lock } from 'lucide-react';
+import userService from '../services/userService';
+import notificationService from '../services/notificationService';
 import './Settings.css';
 
 const Settings = () => {
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    university: '',
+    bio: ''
+  });
   const [notifications, setNotifications] = useState({
     sessionReminders: true,
     deadlineAlerts: true,
@@ -10,11 +18,117 @@ const Settings = () => {
     aiRecommendations: false,
   });
 
-  const handleToggle = (setting) => {
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [profileData, notificationData] = await Promise.all([
+          userService.getUserProfile(),
+          notificationService.getSettings()
+        ]);
+        
+        setProfile({
+          name: profileData.name || '',
+          email: profileData.email || '',
+          university: profileData.university || '',
+          bio: profileData.bio || ''
+        });
+
+        if (notificationData && Object.keys(notificationData).length > 0) {
+          setNotifications(notificationData);
+        }
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleToggle = async (setting) => {
+    const newValue = !notifications[setting];
+    
+    // Optimistic update
     setNotifications(prev => ({
       ...prev,
-      [setting]: !prev[setting]
+      [setting]: newValue
     }));
+
+    try {
+      await notificationService.updateSettings({ [setting]: newValue });
+    } catch (err) {
+      console.error('Error saving notification setting:', err);
+      // Rollback
+      setNotifications(prev => ({
+        ...prev,
+        [setting]: !newValue
+      }));
+    }
+  };
+
+  const handleProfileChange = (e) => {
+    setProfile({ ...profile, [e.target.name]: e.target.value });
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      await userService.updateUserProfile(profile);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert(err.response?.data?.message || 'Failed to update profile');
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswords({ ...passwords, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      alert('New passwords do not match');
+      return;
+    }
+
+    try {
+      await userService.updatePassword({
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword
+      });
+      alert('Password updated successfully!');
+      setPasswords({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (err) {
+      console.error('Error updating password:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update password';
+      alert(errorMessage);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you SURE you want to delete your account? This action cannot be undone.')) {
+      try {
+        await userService.deleteAccount();
+        alert('Account deleted successfully');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } catch (err) {
+        console.error('Error deleting account:', err);
+        alert(err.response?.data?.message || 'Failed to delete account');
+      }
+    }
   };
 
   return (
@@ -31,34 +145,53 @@ const Settings = () => {
           <h3>Profile Settings</h3>
         </div>
         
-        <form className="settings-form" onSubmit={(e) => e.preventDefault()}>
-          <div className="form-row">
-            <div className="form-group">
-              <label>First Name</label>
-              <input type="text" className="form-control" />
-            </div>
-            <div className="form-group">
-              <label>Last Name</label>
-              <input type="text" className="form-control" />
-            </div>
+        <form className="settings-form" onSubmit={handleSaveProfile}>
+          <div className="form-group">
+            <label>Full Name</label>
+            <input 
+              type="text" 
+              name="name"
+              className="form-control" 
+              value={profile.name}
+              onChange={handleProfileChange}
+            />
           </div>
           
           <div className="form-group">
             <label>Email Address</label>
-            <input type="email" className="form-control" />
+            <input 
+              type="email" 
+              name="email"
+              className="form-control" 
+              value={profile.email}
+              onChange={handleProfileChange}
+            />
           </div>
           
           <div className="form-group">
             <label>University/School</label>
-            <input type="text" className="form-control" placeholder="e.g., Harvard University" />
+            <input 
+              type="text" 
+              name="university"
+              className="form-control" 
+              placeholder="e.g., Harvard University" 
+              value={profile.university}
+              onChange={handleProfileChange}
+            />
           </div>
           
           <div className="form-group">
             <label>Bio</label>
-            <textarea className="form-control" placeholder="Tell us about yourself..."></textarea>
+            <textarea 
+              name="bio"
+              className="form-control" 
+              placeholder="Tell us about yourself..."
+              value={profile.bio}
+              onChange={handleProfileChange}
+            ></textarea>
           </div>
           
-          <button type="button" className="save-btn">Save Changes</button>
+          <button type="submit" className="save-btn">Save Changes</button>
         </form>
       </div>
 
@@ -181,23 +314,47 @@ const Settings = () => {
           <h3>Security</h3>
         </div>
         
-        <form className="settings-form" onSubmit={(e) => e.preventDefault()}>
+        <form className="settings-form" onSubmit={handleUpdatePassword}>
           <div className="form-group">
             <label>Current Password</label>
-            <input type="password" placeholder="••••••••" className="form-control" />
+            <input 
+              type="password" 
+              name="currentPassword"
+              placeholder="••••••••" 
+              className="form-control" 
+              value={passwords.currentPassword}
+              onChange={handlePasswordChange}
+              required
+            />
           </div>
           
           <div className="form-group">
             <label>New Password</label>
-            <input type="password" placeholder="••••••••" className="form-control" />
+            <input 
+              type="password" 
+              name="newPassword"
+              placeholder="••••••••" 
+              className="form-control" 
+              value={passwords.newPassword}
+              onChange={handlePasswordChange}
+              required
+            />
           </div>
           
           <div className="form-group">
             <label>Confirm New Password</label>
-            <input type="password" placeholder="••••••••" className="form-control" />
+            <input 
+              type="password" 
+              name="confirmPassword"
+              placeholder="••••••••" 
+              className="form-control" 
+              value={passwords.confirmPassword}
+              onChange={handlePasswordChange}
+              required
+            />
           </div>
           
-          <button type="button" className="save-btn">Update Password</button>
+          <button type="submit" className="save-btn">Update Password</button>
         </form>
       </div>
 
@@ -212,7 +369,7 @@ const Settings = () => {
             <span className="danger-title">Delete Account</span>
             <span className="danger-desc">Permanently delete your account and all associated data</span>
           </div>
-          <button type="button" className="danger-btn">Delete Account</button>
+          <button type="button" className="danger-btn" onClick={handleDeleteAccount}>Delete Account</button>
         </div>
       </div>
       

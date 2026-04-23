@@ -52,10 +52,14 @@ const AddAssignmentModal = ({ isOpen, onClose, onAdd }) => {
   };
 
   const handleAdd = () => {
+    if (!formData.title || !formData.course || !formData.date) {
+      alert('Please provide title, course, and due date');
+      return;
+    }
+
     onAdd({
       ...formData,
       status: 'pending', // Default
-      id: Date.now() // Fake unique ID
     });
     setFormData({ title: '', course: '', description: '', date: '', priority: 'Low' });
     setSelectedDate(null);

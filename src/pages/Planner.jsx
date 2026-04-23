@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import AddSessionModal from '../components/ui/AddSessionModal';
+import sessionService from '../services/sessionService';
 import './Planner.css';
 
 const Planner = () => {
@@ -9,6 +10,55 @@ const Planner = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [activeView, setActiveView] = useState('week');
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const fetchSessions = async () => {
+    setLoading(true);
+    try {
+      const data = await sessionService.getSessions();
+      const mappedEvents = data.map(mapSessionToEvent);
+      setEvents(mappedEvents);
+    } catch (err) {
+      console.error('Error fetching sessions:', err);
+      setError('Failed to load sessions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const mapSessionToEvent = (session) => {
+    const [y, m, d] = session.date.split('-');
+    const dDate = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    
+    const startParts = session.startTime ? session.startTime.split(':') : ['12', '00'];
+    const startHour = parseInt(startParts[0], 10);
+    
+    // Calculate duration in hours
+    const endParts = session.endTime ? session.endTime.split(':') : ['13', '00'];
+    const endHour = parseInt(endParts[0], 10);
+    const endMin = parseInt(endParts[1] || '0', 10);
+    const startMin = parseInt(startParts[1] || '0', 10);
+    const duration = (endHour + endMin/60) - (startHour + startMin/60);
+
+    return {
+      id: session._id,
+      title: session.title,
+      subtitle: session.subject || '',
+      time: `${session.startTime || '12:00'} - ${session.endTime || '13:00'}`,
+      day: dDate.toLocaleDateString('en-US', { weekday: 'short' }),
+      dateText: `${dDate.toLocaleDateString('en-US', { month: 'short' })} ${dDate.getDate()}`,
+      fullDate: session.date, // "YYYY-MM-DD"
+      startHour: startHour + startMin/60,
+      duration: Math.max(0.5, duration),
+      color: session.color
+    };
+  };
 
   const getStartOfWeek = (date) => {
     const d = new Date(date);
@@ -31,6 +81,7 @@ const Planner = () => {
     return {
       name: d.toLocaleDateString('en-US', { weekday: 'short' }),
       num: d.getDate(),
+      fullDate: d.toISOString().split('T')[0],
       active: isActive
     };
   });
@@ -61,53 +112,45 @@ const Planner = () => {
       return d;
     });
   };
-  
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: 'English Essay Writing',
-      subtitle: 'ENG 202',
-      time: '09:00 - 11:00',
-      day: 'Fri',
-      dateText: 'Apr 9',
-      startHour: 9,
-      duration: 2,
-      colorClass: 'bg-pink'
-    },
-    {
-      id: 2,
-      title: 'Calculus Study Session',
-      subtitle: 'Math 201',
-      time: '10:00 - 12:00',
-      day: 'Thu',
-      dateText: 'Apr 8',
-      startHour: 10,
-      duration: 2,
-      colorClass: 'bg-blue'
-    },
-    {
-      id: 3,
-      title: 'Chemistry Lab Prep',
-      subtitle: 'Chem 101',
-      time: '14:00 - 16:00',
-      day: 'Thu',
-      dateText: 'Apr 8',
-      startHour: 14,
-      duration: 2,
-      colorClass: 'bg-purple'
-    },
-    {
-      id: 4,
-      title: 'History Reading',
-      subtitle: 'HIST 101',
-      time: '15:00 - 17:00',
-      day: 'Fri',
-      dateText: 'Apr 9',
-      startHour: 15,
-      duration: 2,
-      colorClass: 'bg-green'
+
+  const handleRemoveSession = async (id) => {
+    if (window.confirm('Delete this study session?')) {
+      try {
+        await sessionService.deleteSession(id);
+        setEvents(prev => prev.filter(ev => ev.id !== id));
+      } catch (err) {
+        console.error('Error deleting session:', err);
+      }
     }
-  ]);
+  };
+
+  const handleAddSession = async (session) => {
+    try {
+      // Calculate duration in minutes for backend
+      const startParts = session.startTime.split(':');
+      const endParts = session.endTime.split(':');
+      const startMins = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+      const endMins = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+      const duration = Math.max(30, endMins - startMins);
+
+      const sessionData = {
+        title: session.title,
+        subject: session.course,
+        date: session.date,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        duration: duration,
+        color: session.color
+      };
+
+      const created = await sessionService.createSession(sessionData);
+      setEvents(prev => [...prev, mapSessionToEvent(created)]);
+      setIsSessionModalOpen(false);
+    } catch (err) {
+      console.error('Error adding session:', err);
+      alert(err.response?.data?.message || 'Failed to add session');
+    }
+  };
 
   return (
     <div className="planner-container">
@@ -137,6 +180,10 @@ const Planner = () => {
           </button>
         </div>
       </div>
+
+      {error && <div className="error-message-bar">{error}</div>}
+      {loading && <div className="planner-loading">Loading study sessions...</div>}
+
 
       {/* Date Navigator */}
       <div className="date-navigator">
@@ -190,7 +237,7 @@ const Planner = () => {
 
                 {/* Events for this day */}
                 {events
-                  .filter(ev => ev.day === day.name)
+                  .filter(ev => ev.fullDate === day.fullDate)
                   .map(ev => {
                     const topPos = (ev.startHour - 7) * 60;
                     const height = ev.duration * 60;
@@ -237,7 +284,7 @@ const Planner = () => {
                     <span className="date">{ev.dateText}</span>
                     <span className="time">{ev.time}</span>
                   </div>
-                  <button className="btn-remove-session">
+                  <button className="btn-remove-session" onClick={() => handleRemoveSession(ev.id)}>
                     <X size={20} />
                   </button>
                 </div>
@@ -251,37 +298,7 @@ const Planner = () => {
       <AddSessionModal 
         isOpen={isSessionModalOpen} 
         onClose={() => setIsSessionModalOpen(false)} 
-        onAdd={(session) => {
-          // Fallbacks for data parsing
-          const startParts = session.startTime ? session.startTime.split(':') : ['12', '00'];
-          const endParts = session.endTime ? session.endTime.split(':') : ['13', '00'];
-          const startHour = parseInt(startParts[0], 10);
-          const endHour = parseInt(endParts[0], 10);
-          const duration = Math.max(1, endHour - startHour);
-          
-          let shortDay = 'Mon', dateText = 'Jan 1';
-          if (session.date) {
-            // Using split and local parsing to avoid UTC day shift offset issues
-            const [y, m, d] = session.date.split('-');
-            const dDate = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-            shortDay = dDate.toLocaleDateString('en-US', { weekday: 'short' });
-            dateText = `${dDate.toLocaleDateString('en-US', { month: 'short' })} ${dDate.getDate()}`;
-          }
-
-          const newEvent = {
-            id: session.id,
-            title: session.title || '(Untitled Session)',
-            subtitle: session.course || '',
-            time: `${session.startTime || '12:00'} - ${session.endTime || '13:00'}`,
-            day: shortDay,
-            dateText: dateText,
-            startHour: startHour,
-            duration: duration,
-            color: session.color
-          };
-
-          setEvents(prev => [...prev, newEvent]);
-        }} 
+        onAdd={handleAddSession} 
       />
     </div>
   );

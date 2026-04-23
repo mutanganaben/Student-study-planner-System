@@ -9,6 +9,8 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import LandingPage from '../pages/LandingPage';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import Dashboard from '../pages/Dashboard';
 import Planner from '../pages/Planner';
 import Assignments from '../pages/Assignments';
@@ -27,6 +29,8 @@ const AppRoutes = () => {
       {/* Auth Routes without Navigation */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* Protected/Dashboard Routes with Sidebar Layout */}
       <Route path="/dashboard" element={<DashboardLayout />}>

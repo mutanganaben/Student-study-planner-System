@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Calendar } from 'lucide-react';
+import { useAuth } from '../context';
 import './Auth.css';
 
 const Register = () => {
@@ -11,6 +12,12 @@ const Register = () => {
     confirmPassword: '',
     agreeTerms: false
   });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,10 +27,38 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Implementation placeholder for backend API registration
-    console.log('Registration submitted:', formData);
+    console.log('Registration form submitted', formData);
+    setError('');
+    setSuccess('');
+
+    if (formData.password !== formData.confirmPassword) {
+      console.log('Password mismatch');
+      return setError('Passwords do not match');
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Attempting to register with backend...');
+      const response = await register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password
+      });
+      console.log('Registration successful!');
+      setSuccess(response.message || 'Registration successful!');
+      // Navigate to dashboard immediately
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,8 +78,8 @@ const Register = () => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="fullName">Full Name</label>
-            <div className="input-wrapper">
-              <User className="input-icon" size={20} />
+            <div className="auth-input-wrapper">
+              <User className="auth-input-icon" size={20} />
               <input
                 type="text"
                 id="fullName"
@@ -59,8 +94,8 @@ const Register = () => {
 
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <div className="input-wrapper">
-              <Mail className="input-icon" size={20} />
+            <div className="auth-input-wrapper">
+              <Mail className="auth-input-icon" size={20} />
               <input
                 type="email"
                 id="email"
@@ -75,8 +110,8 @@ const Register = () => {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
+            <div className="auth-input-wrapper">
+              <Lock className="auth-input-icon" size={20} />
               <input
                 type="password"
                 id="password"
@@ -91,8 +126,8 @@ const Register = () => {
 
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
+            <div className="auth-input-wrapper">
+              <Lock className="auth-input-icon" size={20} />
               <input
                 type="password"
                 id="confirmPassword"
@@ -119,8 +154,20 @@ const Register = () => {
             </label>
           </div>
 
-          <button type="submit" className="auth-submit-btn">
-            Create Account
+          {error && <div className="auth-error">{error}</div>}
+          {success && <div className="auth-success" style={{ 
+            padding: '1rem', 
+            backgroundColor: '#ecfdf5', 
+            color: '#065f46', 
+            borderRadius: '0.5rem', 
+            marginBottom: '1rem',
+            fontSize: '0.875rem',
+            lineHeight: '1.5',
+            border: '1px solid #a7f3d0'
+          }}>{success}</div>}
+
+          <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 

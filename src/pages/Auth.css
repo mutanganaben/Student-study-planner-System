@@ -74,21 +74,38 @@
   font-size: 0.95rem;
 }
 
-.input-wrapper {
+.auth-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-icon {
   position: absolute;
   left: 1.25rem;
-  color: #94a3b8;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 10;
+  opacity: 0.7;
 }
 
-.input-wrapper input {
+.auth-input-wrapper:focus-within .auth-input-icon {
+  color: var(--color-primary);
+  transform: translateY(-50%) scale(1.1);
+  opacity: 1;
+}
+
+.auth-input-wrapper input {
   width: 100%;
-  padding: 0.875rem 1rem 0.875rem 3.25rem;
+  padding: 0.875rem 1.25rem 0.875rem 3.5rem !important;
+  /* Force high priority */
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: 1rem;
@@ -98,14 +115,14 @@
   transition: all 0.2s ease;
 }
 
-.input-wrapper input:focus {
+.auth-input-wrapper input:focus {
   outline: none;
   border-color: var(--color-primary);
   background-color: #ffffff;
   box-shadow: 0 0 0 4px rgba(82, 68, 225, 0.1);
 }
 
-.input-wrapper input::placeholder {
+.auth-input-wrapper input::placeholder {
   color: #cbd5e1;
 }
 
@@ -141,7 +158,7 @@
 }
 
 .auth-options .form-checkbox {
-  margin: 0; 
+  margin: 0;
 }
 
 .forgot-password {
@@ -172,6 +189,52 @@
 
 .auth-submit-btn:hover {
   background-color: var(--color-primary-hover);
+}
+
+.auth-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 0.875rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  text-align: center;
+  border: 1px solid #fee2e2;
+}
+
+.auth-success-state {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.auth-success-icon {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-success-message {
+  font-size: 1.05rem;
+  color: var(--color-text-main);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.auth-back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.auth-back-link:hover {
+  color: var(--color-primary);
 }
 
 .auth-footer-text {

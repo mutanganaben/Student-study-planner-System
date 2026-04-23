@@ -1,9 +1,57 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, Book, TrendingUp, AlertCircle, Calendar, ChevronRight } from 'lucide-react';
+import assignmentService from '../services/assignmentService';
+import sessionService from '../services/sessionService';
+import dashboardService from '../services/dashboardService';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const [assignments, setAssignments] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [stats, setStats] = useState({
+    weeklyStudyHours: 0,
+    completedTasks: 0,
+    activeCourses: 0,
+    studyStreak: 0
+  });
+  const [weeklyChart, setWeeklyChart] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [assignmentData, sessionData, statsData, chartData] = await Promise.all([
+          assignmentService.getAssignments(),
+          sessionService.getSessions(),
+          dashboardService.getStats(),
+          dashboardService.getWeeklyData()
+        ]);
+        setAssignments(assignmentData);
+        setSessions(sessionData);
+        setStats(statsData);
+        setWeeklyChart(chartData);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todaySessions = sessions.filter(s => s.date === todayStr);
+
+
+  // Filter upcoming assignments (example logic)
+  const upcomingAssignments = assignments
+    .filter(a => a.status !== 'completed')
+    .slice(0, 3);
+
   return (
     <div className="dashboard-overview">
       {/* Stats Grid */}
@@ -16,7 +64,7 @@ const Dashboard = () => {
             <span className="stat-badge badge-positive">+12%</span>
           </div>
           <p className="stat-title">Study Hours This Week</p>
-          <h2 className="stat-value">24.5</h2>
+          <h2 className="stat-value">{stats.weeklyStudyHours}</h2>
         </div>
 
         <div className="stat-card">
@@ -24,10 +72,10 @@ const Dashboard = () => {
             <div className="stat-icon bg-green">
               <CheckCircle color="white" size={24} />
             </div>
-            <span className="stat-badge badge-positive">+8%</span>
+            <span className="stat-badge badge-positive">+{assignments.filter(a => a.status === 'completed').length}</span>
           </div>
           <p className="stat-title">Completed Tasks</p>
-          <h2 className="stat-value">18</h2>
+          <h2 className="stat-value">{stats.completedTasks}</h2>
         </div>
 
         <div className="stat-card">
@@ -38,7 +86,7 @@ const Dashboard = () => {
             <span className="stat-badge badge-neutral">-</span>
           </div>
           <p className="stat-title">Active Courses</p>
-          <h2 className="stat-value">6</h2>
+          <h2 className="stat-value">{stats.activeCourses}</h2>
         </div>
 
         <div className="stat-card">
@@ -49,7 +97,7 @@ const Dashboard = () => {
             <span className="stat-badge badge-positive">+2</span>
           </div>
           <p className="stat-title">Study Streak</p>
-          <h2 className="stat-value">7 days</h2>
+          <h2 className="stat-value">{stats.studyStreak} {stats.studyStreak === 1 ? 'day' : 'days'}</h2>
         </div>
       </div>
 
@@ -62,16 +110,29 @@ const Dashboard = () => {
               <h3>Weekly Study Hours</h3>
               <p>Your study pattern this week</p>
             </div>
-            <a href="#" className="panel-link">View Details &gt;</a>
+            <Link to="/dashboard/analytics" className="panel-link">
+              View Details <ChevronRight size={16} />
+            </Link>
           </div>
           
           <div className="chart-container-inner">
             <div className="chart-grid">
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
+              <div className="grid-lines-h">
+                <div className="grid-line-h"></div>
+                <div className="grid-line-h"></div>
+                <div className="grid-line-h"></div>
+                <div className="grid-line-h"></div>
+                <div className="grid-line-h"></div>
+              </div>
+              <div className="grid-lines-v">
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+                <div className="grid-line-v-wrapper"><div className="grid-line-v"></div></div>
+              </div>
             </div>
             
             <div className="chart-axis-y">
@@ -83,23 +144,35 @@ const Dashboard = () => {
             </div>
             
             <div className="chart-axis-x">
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-              <span>Sun</span>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                <span key={day}>{day}</span>
+              ))}
             </div>
 
             <div className="chart-bars-layer">
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '50%' }}></div></div>
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '40%' }}></div></div>
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '65%' }}></div></div>
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '35%' }}></div></div>
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '55%' }}></div></div>
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '30%' }}></div></div>
-              <div className="chart-bar-container"><div className="chart-bar" style={{ height: '25%' }}></div></div>
+              {weeklyChart.length > 0 ? (
+                weeklyChart.map((data) => {
+                  const maxHours = 8; // Max value for chart Y-axis
+                  const heightPercentage = Math.min((data.hours / maxHours) * 100, 100);
+                  
+                  return (
+                    <div key={data.day} className="chart-bar-container">
+                      <div className="chart-bar" style={{ height: `${heightPercentage}%` }}>
+                        <div className="chart-tooltip">
+                          <div className="chart-tooltip-day">{data.day}</div>
+                          <div className="chart-tooltip-val">hours: {data.hours}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                  <div key={day} className="chart-bar-container">
+                    <div className="chart-bar" style={{ height: '0%' }}></div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -110,53 +183,37 @@ const Dashboard = () => {
             <div className="panel-title">
               <h3>Upcoming Deadlines</h3>
             </div>
-            <a href="#" className="panel-link">View All</a>
+            <Link to="/dashboard/assignments" className="panel-link">View All</Link>
           </div>
 
           <div className="deadline-list">
-            <div className="deadline-item">
-              <div className="deadline-info">
-                <div className="deadline-icon-wrapper red">
-                  <AlertCircle size={18} strokeWidth={2.5} />
+            {loading ? (
+              <p>Loading assignments...</p>
+            ) : upcomingAssignments.length > 0 ? (
+              upcomingAssignments.map((assignment) => (
+                <div key={assignment._id} className="deadline-item">
+                  <div className="deadline-info">
+                    <div className={`deadline-icon-wrapper ${assignment.priority === 'high' ? 'red' : 'yellow'}`}>
+                      <AlertCircle size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="deadline-details">
+                      <h4>{assignment.title}</h4>
+                      <p>{assignment.course}</p>
+                    </div>
+                  </div>
+                  <div className="deadline-time">
+                    {new Date(assignment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
                 </div>
-                <div className="deadline-details">
-                  <h4>Physics Lab Report</h4>
-                  <p>Physics 101</p>
-                </div>
-              </div>
-              <div className="deadline-time">Tomorrow</div>
-            </div>
-
-            <div className="deadline-item">
-              <div className="deadline-info">
-                <div className="deadline-icon-wrapper yellow">
-                  <AlertCircle size={18} strokeWidth={2.5} />
-                </div>
-                <div className="deadline-details">
-                  <h4>Essay Draft</h4>
-                  <p>English</p>
-                </div>
-              </div>
-              <div className="deadline-time">Apr 10</div>
-            </div>
-
-            <div className="deadline-item">
-              <div className="deadline-info">
-                <div className="deadline-icon-wrapper red">
-                  <AlertCircle size={18} strokeWidth={2.5} />
-                </div>
-                <div className="deadline-details">
-                  <h4>Midterm Exam</h4>
-                  <p>Biology</p>
-                </div>
-              </div>
-              <div className="deadline-time">Apr 12</div>
-            </div>
+              ))
+            ) : (
+              <p>No upcoming deadlines!</p>
+            )}
           </div>
 
-          <button className="add-task-btn">
+          <Link to="/dashboard/assignments" className="add-task-btn" style={{textDecoration: 'none'}}>
             <Calendar size={18} /> Add New Assignment
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -165,73 +222,37 @@ const Dashboard = () => {
         <div className="panel-header">
           <div className="panel-title">
             <h3>Today's Schedule</h3>
-            <p>4 tasks planned for today</p>
+            <p>{todaySessions.length} sessions planned for today</p>
           </div>
-          <a href="#" className="panel-link" style={{display: 'flex', alignItems: 'center'}}>
+          <Link to="/dashboard/planner" className="panel-link" style={{display: 'flex', alignItems: 'center'}}>
             View Calendar <ChevronRight size={16} />
-          </a>
+          </Link>
         </div>
 
         <div className="schedule-list">
-          {/* Task 1 */}
-          <div className="schedule-item">
-            <div className="schedule-left">
-              <div className="task-checkbox"></div>
-              <div className="task-details">
-                <h4>Complete Math Assignment</h4>
-                <p>Calculus II</p>
+          {todaySessions.length > 0 ? (
+            todaySessions.map((session) => (
+              <div key={session._id} className="schedule-item">
+                <div className="schedule-left">
+                  <div className="task-checkbox" style={{ backgroundColor: session.color }}></div>
+                  <div className="task-details">
+                    <h4>{session.title}</h4>
+                    <p>{session.subject}</p>
+                  </div>
+                </div>
+                <div className="schedule-right">
+                  <span className="task-time">{session.startTime}</span>
+                  <span className={`task-badge badge-${session.status || 'scheduled'}`}>
+                    {session.status || 'scheduled'}
+                  </span>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="no-sessions-msg" style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              No study sessions scheduled for today.
             </div>
-            <div className="schedule-right">
-              <span className="task-time">10:00 AM</span>
-              <span className="task-badge badge-high">high</span>
-            </div>
-          </div>
-
-          {/* Task 2 */}
-          <div className="schedule-item">
-            <div className="schedule-left">
-              <div className="task-checkbox"></div>
-              <div className="task-details">
-                <h4>Review Chemistry Notes</h4>
-                <p>Organic Chemistry</p>
-              </div>
-            </div>
-            <div className="schedule-right">
-              <span className="task-time">2:00 PM</span>
-              <span className="task-badge badge-medium">medium</span>
-            </div>
-          </div>
-
-          {/* Task 3 */}
-          <div className="schedule-item">
-            <div className="schedule-left">
-              <div className="task-checkbox"></div>
-              <div className="task-details">
-                <h4>Group Project Meeting</h4>
-                <p>English Literature</p>
-              </div>
-            </div>
-            <div className="schedule-right">
-              <span className="task-time">4:00 PM</span>
-              <span className="task-badge badge-low">low</span>
-            </div>
-          </div>
-
-          {/* Task 4 */}
-          <div className="schedule-item">
-            <div className="schedule-left">
-              <div className="task-checkbox"></div>
-              <div className="task-details">
-                <h4>Read Chapter 5</h4>
-                <p>History</p>
-              </div>
-            </div>
-            <div className="schedule-right">
-              <span className="task-time">7:00 PM</span>
-              <span className="task-badge badge-medium">medium</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

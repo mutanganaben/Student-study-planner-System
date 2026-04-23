@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, TrendingUp, Target, Award, Brain, Calendar } from 'lucide-react';
+import progressService from '../services/progressService';
 import './Analytics.css';
 
 // Helper for Pie Chart Paths
@@ -11,14 +12,8 @@ const polarToCartesian = (cx, cy, r, angleInDegrees) => {
   };
 };
 
-const getPieData = () => {
-  const data = [
-    { id: 1, label: 'Math: 12h', value: 12, color: '#4f46e5' }, // indigo
-    { id: 2, label: 'Physics: 9h', value: 9, color: '#f59e0b' }, // orange
-    { id: 3, label: 'History: 6h', value: 6, color: '#10b981' }, // green
-    { id: 4, label: 'English: 8h', value: 8, color: '#ec4899' }, // pink
-    { id: 5, label: 'Chemistry: 10h', value: 10, color: '#8b5cf6' }, // purple
-  ];
+const getPieData = (data) => {
+  if (!data || data.length === 0) return [];
   let total = data.reduce((sum, d) => sum + d.value, 0);
   let currentAngle = 0;
   
@@ -58,17 +53,53 @@ const getPieData = () => {
 };
 
 const Analytics = () => {
-  const weeklyData = [
-    { day: 'Mon', hours: 4.5, goal: 5 },
-    { day: 'Tue', hours: 2.2, goal: 5 },
-    { day: 'Wed', hours: 2.2, goal: 5 },
-    { day: 'Thu', hours: 3.0, goal: 5 },
-    { day: 'Fri', hours: 4.5, goal: 5 },
-    { day: 'Sat', hours: 2.5, goal: 5 },
-    { day: 'Sun', hours: 2.0, goal: 5 },
-  ];
+  const [stats, setStats] = useState({
+    totalStudyHours: 0,
+    hoursChange: 0,
+    averageDailyHours: 0,
+    avgChange: 0,
+    goalsAchieved: 0,
+    totalGoals: 0,
+    goalCompletionRate: 0,
+    studyStreak: 0,
+    recordStreak: 0
+  });
+  const [weeklyData, setWeeklyData] = useState([]);
+  const [courseData, setCourseData] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [goals, setGoals] = useState({
+    weeklyTarget: 35,
+    currentHours: 0,
+    progress: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const [statsRes, weeklyRes, coursesRes, recsRes, goalsRes] = await Promise.all([
+          progressService.getStats(),
+          progressService.getWeeklyData(),
+          progressService.getCourseData(),
+          progressService.getRecommendations(),
+          progressService.getGoals()
+        ]);
+        setStats(statsRes);
+        setWeeklyData(weeklyRes);
+        setCourseData(coursesRes);
+        setRecommendations(recsRes);
+        setGoals(goalsRes);
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
   
-  const pieSlices = getPieData();
+  const pieSlices = getPieData(courseData);
 
   return (
     <div className="analytics-container">
@@ -84,11 +115,13 @@ const Analytics = () => {
             <div className="stat-icon bg-blue">
               <Clock color="white" size={24} />
             </div>
-            <span className="stat-indicator indicator-positive">+15%</span>
+            <span className={`stat-indicator indicator-${stats.hoursChange >= 0 ? 'positive' : 'negative'}`}>
+              {stats.hoursChange >= 0 ? '+' : ''}{stats.hoursChange}%
+            </span>
           </div>
           <div className="stat-info">
             <p className="stat-title">Total Study Hours</p>
-            <h2 className="stat-value">124</h2>
+            <h2 className="stat-value">{stats.totalStudyHours}</h2>
             <p className="stat-desc">This month</p>
           </div>
         </div>
@@ -99,11 +132,13 @@ const Analytics = () => {
             <div className="stat-icon bg-green">
               <TrendingUp color="white" size={24} />
             </div>
-            <span className="stat-indicator indicator-positive">+8%</span>
+            <span className={`stat-indicator indicator-${stats.avgChange >= 0 ? 'positive' : 'negative'}`}>
+              {stats.avgChange >= 0 ? '+' : ''}{stats.avgChange}%
+            </span>
           </div>
           <div className="stat-info">
             <p className="stat-title">Average Daily Hours</p>
-            <h2 className="stat-value">4.1</h2>
+            <h2 className="stat-value">{stats.averageDailyHours}</h2>
             <p className="stat-desc">Per day</p>
           </div>
         </div>
@@ -114,11 +149,11 @@ const Analytics = () => {
             <div className="stat-icon bg-purple">
               <Target color="white" size={24} />
             </div>
-            <span className="stat-indicator indicator-positive">90%</span>
+            <span className="stat-indicator indicator-positive">{stats.goalCompletionRate}%</span>
           </div>
           <div className="stat-info">
             <p className="stat-title">Goals Achieved</p>
-            <h2 className="stat-value">18/20</h2>
+            <h2 className="stat-value">{stats.goalsAchieved}/{stats.totalGoals}</h2>
             <p className="stat-desc">This month</p>
           </div>
         </div>
@@ -129,11 +164,11 @@ const Analytics = () => {
             <div className="stat-icon bg-orange">
               <Award color="white" size={24} />
             </div>
-            <span className="stat-indicator indicator-positive">Record: 14</span>
+            <span className="stat-indicator indicator-positive">Record: {stats.recordStreak}</span>
           </div>
           <div className="stat-info">
             <p className="stat-title">Study Streak</p>
-            <h2 className="stat-value">7 days</h2>
+            <h2 className="stat-value">{stats.studyStreak} {stats.studyStreak === 1 ? 'day' : 'days'}</h2>
             <p className="stat-desc">Current streak</p>
           </div>
         </div>
@@ -144,7 +179,7 @@ const Analytics = () => {
         <div className="insight-panel">
           <div className="panel-header">
             <h3>Weekly Study Hours</h3>
-             <p>25.5 hours this week • 73% goal achieved</p>
+             <p>{weeklyData.reduce((acc, d) => acc + d.hours, 0).toFixed(1)} hours this week</p>
           </div>
           
           <div className="bar-chart-container">
@@ -162,9 +197,9 @@ const Analytics = () => {
               <div className="grid-line"></div>
             </div>
             <div className="chart-bars">
-              {weeklyData.map((d, idx) => (
+              {weeklyData.length > 0 ? weeklyData.map((d, idx) => (
                 <div key={idx} className="bar-wrapper">
-                  <div className="bar-fill" style={{ height: `${(d.hours / 8) * 100}%` }}></div>
+                  <div className="bar-fill" style={{ height: `${Math.min((d.hours / 8) * 100, 100)}%` }}></div>
                   <span className="bar-label">{d.day}</span>
                   
                   {/* Tooltip */}
@@ -174,7 +209,14 @@ const Analytics = () => {
                     <div className="tooltip-goal">goal : {d.goal}</div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
+                  <div key={idx} className="bar-wrapper">
+                    <div className="bar-fill" style={{ height: '0%' }}></div>
+                    <span className="bar-label">{day}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -187,27 +229,33 @@ const Analytics = () => {
           </div>
           
           <div className="pie-chart-container">
-             <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: 'visible' }}>
-               {pieSlices.map((slice) => (
-                 <g key={slice.id}>
-                   <path 
-                     d={slice.dPath} 
-                     fill={slice.color} 
-                     stroke="white" 
-                     strokeWidth="0.5" 
-                   />
-                   <text 
-                     x={slice.textPos.x + slice.dx} 
-                     y={slice.textPos.y} 
-                     className="pie-svg-text" 
-                     fill={slice.color}
-                     textAnchor={slice.textAnchor}
-                   >
-                     {slice.label}
-                   </text>
-                 </g>
-               ))}
-             </svg>
+             {pieSlices.length > 0 ? (
+               <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: 'visible' }}>
+                 {pieSlices.map((slice) => (
+                   <g key={slice.id}>
+                     <path 
+                       d={slice.dPath} 
+                       fill={slice.color} 
+                       stroke="white" 
+                       strokeWidth="0.5" 
+                     />
+                     <text 
+                       x={slice.textPos.x + slice.dx} 
+                       y={slice.textPos.y} 
+                       className="pie-svg-text" 
+                       fill={slice.color}
+                       textAnchor={slice.textAnchor}
+                     >
+                       {slice.label}
+                     </text>
+                   </g>
+                 ))}
+               </svg>
+             ) : (
+               <div className="no-data-msg" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-muted)'}}>
+                 No study data available yet.
+               </div>
+             )}
           </div>
         </div>
       </div>
@@ -219,32 +267,19 @@ const Analytics = () => {
           <p>Personalized insights to improve your study habits</p>
         </div>
         <div className="recommendations-grid">
-          {/* Recommendation 1 */}
-          <div className="rec-card rec-card-green">
-            <div className="rec-icon">
-              <Brain size={32} className="rec-icon-svg" />
+          {recommendations.length > 0 ? recommendations.map((rec, idx) => (
+            <div key={idx} className={`rec-card rec-card-${rec.type === 'optimal_time' ? 'green' : rec.type === 'weak_subject' ? 'yellow' : 'blue'}`}>
+              <div className="rec-icon">
+                {rec.type === 'optimal_time' && <Brain size={32} className="rec-icon-svg" />}
+                {rec.type === 'weak_subject' && <Calendar size={32} className="rec-icon-svg" />}
+                {rec.type === 'weekend_gap' && <Target size={32} className="rec-icon-svg" strokeWidth={2.5} />}
+              </div>
+              <h4>{rec.title}</h4>
+              <p>{rec.message}</p>
             </div>
-            <h4>Optimal Study Time</h4>
-            <p>Your peak productivity is at 9 AM. Schedule challenging tasks during this time.</p>
-          </div>
-          
-          {/* Recommendation 2 */}
-          <div className="rec-card rec-card-yellow">
-            <div className="rec-icon">
-              <Calendar size={32} className="rec-icon-svg" />
-            </div>
-            <h4>Increase Math Study Time</h4>
-            <p>Your Math performance could improve with 2 more hours per week.</p>
-          </div>
-          
-          {/* Recommendation 3 */}
-          <div className="rec-card rec-card-blue">
-            <div className="rec-icon">
-              <Target size={32} className="rec-icon-svg" strokeWidth={2.5} />
-            </div>
-            <h4>Weekend Goal</h4>
-            <p>You studied less on weekends. Try to maintain at least 3 hours per day.</p>
-          </div>
+          )) : (
+            <p style={{gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem'}}>No recommendations available yet. Keep studying!</p>
+          )}
         </div>
       </div>
 
@@ -259,33 +294,33 @@ const Analytics = () => {
           {/* Goal 1 */}
           <div className="goal-item">
             <div className="goal-header">
-              <span className="goal-title">Weekly Study Target: 35 hours</span>
-              <span className="goal-status">25.5 / 35 hours</span>
+              <span className="goal-title">Weekly Study Target: {goals.weeklyTarget} hours</span>
+              <span className="goal-status">{goals.currentHours} / {goals.weeklyTarget} hours</span>
             </div>
             <div className="progress-track bg-indigo-light">
-              <div className="progress-fill fill-indigo" style={{ width: '73%' }}></div>
+              <div className="progress-fill fill-indigo" style={{ width: `${goals.progress}%` }}></div>
             </div>
           </div>
           
           {/* Goal 2 */}
           <div className="goal-item">
             <div className="goal-header">
-              <span className="goal-title">Complete 20 Assignments</span>
-              <span className="goal-status">18 / 20 completed</span>
+              <span className="goal-title">Complete Assignments</span>
+              <span className="goal-status">{stats.goalsAchieved} / {stats.totalGoals} completed</span>
             </div>
             <div className="progress-track bg-purple-light">
-              <div className="progress-fill fill-purple" style={{ width: '90%' }}></div>
+              <div className="progress-fill fill-purple" style={{ width: `${stats.totalGoals > 0 ? (stats.goalsAchieved / stats.totalGoals) * 100 : 0}%` }}></div>
             </div>
           </div>
           
           {/* Goal 3 */}
           <div className="goal-item">
             <div className="goal-header">
-              <span className="goal-title">Maintain 7-day Study Streak</span>
-              <span className="goal-status">7 / 7 days</span>
+              <span className="goal-title">Study Streak</span>
+              <span className="goal-status">{stats.studyStreak} {stats.studyStreak === 1 ? 'day' : 'days'}</span>
             </div>
             <div className="progress-track bg-green-light">
-              <div className="progress-fill fill-green" style={{ width: '100%' }}></div>
+              <div className="progress-fill fill-green" style={{ width: `${Math.min((stats.studyStreak / 7) * 100, 100)}%` }}></div>
             </div>
           </div>
         </div>

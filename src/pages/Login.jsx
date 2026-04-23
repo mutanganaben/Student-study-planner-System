@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, Mail, Lock } from 'lucide-react';
+import { useAuth } from '../context';
 import './Auth.css';
 
 const Login = () => {
@@ -9,6 +10,10 @@ const Login = () => {
     password: '',
     rememberMe: false
   });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,11 +24,22 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Implementation placeholder for backend API validation
-    console.log('Login submitted:', formData);
-    navigate('/dashboard');
+    setError('');
+    setIsSubmitting(true);
+    
+    try {
+      await login({
+        email: formData.email,
+        password: formData.password
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,8 +59,8 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <div className="input-wrapper">
-              <Mail className="input-icon" size={20} />
+            <div className="auth-input-wrapper">
+              <Mail className="auth-input-icon" size={20} />
               <input
                 type="email"
                 id="email"
@@ -59,8 +75,8 @@ const Login = () => {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
+            <div className="auth-input-wrapper">
+              <Lock className="auth-input-icon" size={20} />
               <input
                 type="password"
                 id="password"
@@ -89,8 +105,10 @@ const Login = () => {
             </Link>
           </div>
 
-          <button type="submit" className="auth-submit-btn">
-            Log In
+          {error && <div className="auth-error">{error}</div>}
+
+          <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+            {isSubmitting ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 
